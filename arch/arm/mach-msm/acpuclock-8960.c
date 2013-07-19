@@ -33,6 +33,7 @@
 #include <mach/rpm-regulator.h>
 #include <mach/msm_bus.h>
 #include <mach/msm_bus_board.h>
+#include <mach/msm_dcvs.h>
 #include <mach/socinfo.h>
 #include <mach/msm-krait-l2-accessors.h>
 #include <mach/rpm-regulator.h>
@@ -1579,6 +1580,17 @@ static void __init cpufreq_table_init(void)
 static void __init cpufreq_table_init(void) {}
 #endif
 
+static void __init dcvs_freq_init(void)
+{
+	int i;
+
+	for (i = 0; acpu_freq_tbl[i].speed.khz != 0; i++)
+		if (acpu_freq_tbl[i].use_for_scaling)
+			msm_dcvs_register_cpu_freq(
+				acpu_freq_tbl[i].speed.khz,
+				acpu_freq_tbl[i].vdd_core / 1000);
+}
+
 #define HOT_UNPLUG_KHZ STBY_KHZ
 static int __cpuinit acpuclock_cpu_callback(struct notifier_block *nfb,
 					    unsigned long action, void *hcpu)
@@ -1804,7 +1816,7 @@ static int __init acpuclk_8960_probe(struct platform_device *pdev)
 		regulator_init(cpu, max_acpu_level);
 #endif
 	cpufreq_table_init();
-
+	dcvs_freq_init();
 	acpuclk_register(&acpuclk_8960_data);
 	register_hotcpu_notifier(&acpuclock_cpu_notifier);
 
